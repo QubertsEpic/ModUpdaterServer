@@ -66,8 +66,9 @@ namespace Server
                             break;
                         case TransferTypes.GetSpecificMods:
                             Console.WriteLine("Getting mod lists.");
-                            List<Mod> modList = server.ModHandler.SelectedMods(bytes);
-                            
+                            Dictionary<int, Mod> modList = server.ModHandler.SelectedMods(bytes);
+                            Dictionary<int, byte[]> modData = server.ModHandler.GetModData(modList);
+                            await SendModData(modData);
                             break;
 
                     }
@@ -86,15 +87,33 @@ namespace Server
                 server.DisposeClient(this, new ClientEventArgs(UniqueId));
             }
         }
-        private async void SendModList(List<Mod> modList)
-        {
-
-        }
         private (MemoryStream stream, BinaryWriter writer) MemoryBinaryWriterCreator()
         {
             MemoryStream memoryStream = new MemoryStream();
             BinaryWriter memWriter = new BinaryWriter(memoryStream);
             return (memoryStream, memWriter);
+        }
+        //ToDo: Change this into it's own class that handles the mod list.
+        private async Task SendModData(Dictionary<int, byte[]> data)
+        {
+            if(data == null || data.Count < 1)
+            {
+                Console.WriteLine("Cannot send empty data");
+                return;
+            }
+            Console.WriteLine("Sending Mod Data.");
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+            foreach(var keyValue in data)
+            {
+                writer.Write(keyValue.Key);
+                stream.Write(keyValue.Value, 0, keyValue.Value.Length);
+            }
+            byte[] bytes = stream.ToArray();
+            stream.Close();
+            Packet packet = new Packet(TransferTypes.SendSpecificMods, bytes);
+            await SendPacketAsync(packet);
+            
         }
         public async Task SendPacketAsync(Packet packet)
         {

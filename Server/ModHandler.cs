@@ -103,21 +103,43 @@ internal class ModHandler
         return data;
     }
 
-    public List<Mod> SelectedMods(byte[] data)
+    public Dictionary<int, byte[]> GetModData(Dictionary<int, Mod> mods)
+    {
+        return GetModData(mods.Keys.ToList());
+    }
+
+    public Dictionary<int, byte[]> GetModData(List <int> modIds)
+    {
+        Dictionary<int, byte[]> data = new Dictionary<int, byte[]>();
+        for(int i = 0; i <  modIds.Count; i++)
+        {
+            if (!Mods.ContainsKey(modIds[i]))
+                continue;
+            Mod mod = Mods[modIds[i]];
+            string path = Path.Combine(folder, mod.Filename);
+            if (!File.Exists(path))
+                continue;
+
+            byte[] bytes = File.ReadAllBytes(path);
+            data.Add(mod.ID,bytes);
+        }
+        return data;
+    }
+    public Dictionary<int,Mod> SelectedMods(byte[] data)
     {
         MemoryStream stream = new MemoryStream(data);
         stream.Position = 0;
         BinaryReader reader = new BinaryReader(stream);
 
         int length = reader.ReadInt32();
-        List<Mod> mods = new List<Mod>();
+        Dictionary<int ,Mod> mods = new Dictionary<int, Mod>();
         for(int i= 0; i < length; i++)
         {
             int keys = reader.ReadInt32();
             if (this.mods?.ContainsKey(keys) == true)
             {
                 Mod mod = this.mods[keys];
-                mods.Add(mod);
+                mods.Add(keys,mod);
             }
         }
 

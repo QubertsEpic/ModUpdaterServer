@@ -13,5 +13,6 @@ namespace Server
         RecieveModList = 2,
         SendModList = 3,
         GetSpecificMods = 4,
+        SendSpecificMods = 5,
     }
 }
